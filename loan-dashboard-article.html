@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decoding Loan Risk — A Data Story | Medium</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-light: #3d3d3d;
+    --muted: #757575;
+    --rule: #e8e8e8;
+    --accent: #1a7a4a;
+    --accent-warm: #c0392b;
+    --accent-blue: #1a4a7a;
+    --bg: #fafaf8;
+    --highlight: #f0f7f3;
+    --gold: #d4a017;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Source Serif 4', serif;
+    color: var(--ink);
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    border-bottom: 1px solid var(--rule);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; letter-spacing: -0.5px; }
+  .topbar-meta { font-size: 0.8rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Layout ── */
+  .article-wrap { max-width: 740px; margin: 0 auto; padding: 64px 24px 120px; }
+
+  /* ── Tags ── */
+  .tag-row { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .tag-green { background: #e6f4ed; color: var(--accent); }
+  .tag-red   { background: #fdecea; color: var(--accent-warm); }
+  .tag-blue  { background: #e8f0fb; color: var(--accent-blue); }
+  .tag-gold  { background: #fdf6e3; color: #a07800; }
+
+  /* ── Hero Title ── */
+  h1.hero {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 20px;
+    letter-spacing: -0.5px;
+  }
+
+  .deck {
+    font-size: 1.2rem;
+    color: var(--ink-light);
+    font-style: italic;
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  /* ── Byline ── */
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 48px;
+  }
+  .avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-blue) 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .byline-text { flex: 1; }
+  .byline-name { font-size: 0.92rem; font-weight: 600; color: var(--ink); }
+  .byline-meta { font-size: 0.82rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .read-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: var(--rule);
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+
+  /* ── Body Text ── */
+  p { font-size: 1.05rem; color: var(--ink-light); margin-bottom: 24px; line-height: 1.85; }
+  p.lead { font-size: 1.15rem; color: var(--ink); font-weight: 400; }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.55rem;
+    color: var(--ink);
+    margin: 52px 0 16px;
+    padding-top: 8px;
+    border-top: 2px solid var(--rule);
+  }
+  h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 32px 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Pull Quote ── */
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 20px 28px;
+    margin: 36px 0;
+    background: var(--highlight);
+    border-radius: 0 6px 6px 0;
+  }
+  blockquote p {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    color: var(--ink);
+    font-style: italic;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* ── KPI Grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+  }
+  .kpi-card {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 20px 18px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .kpi-value.red   { color: var(--accent-warm); }
+  .kpi-value.blue  { color: var(--accent-blue); }
+  .kpi-value.gold  { color: var(--gold); }
+  .kpi-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── Visual Stats ── */
+  .stat-block {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 28px 28px 20px;
+    margin: 28px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .stat-block-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Gender split bar */
+  .split-bar { display: flex; height: 18px; border-radius: 4px; overflow: hidden; margin: 8px 0 14px; }
+  .split-male   { background: #1a4a7a; }
+  .split-female { background: #c0392b; }
+  .split-labels { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .split-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+
+  /* Horizontal bar rows */
+  .h-bar-row { margin-bottom: 14px; }
+  .h-bar-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .h-bar-track { height: 14px; background: var(--rule); border-radius: 4px; overflow: hidden; }
+  .h-bar-fill  { height: 100%; border-radius: 4px; }
+
+  /* Donut stand-in */
+  .donut-flex { display: flex; gap: 24px; align-items: center; }
+  .donut-svg  { flex-shrink: 0; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.92rem; color: var(--ink-light); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+  /* Income risk bar */
+  .risk-item { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .risk-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); width: 64px; flex-shrink: 0; }
+  .risk-track { flex: 1; height: 16px; background: var(--rule); border-radius: 4px; overflow: hidden; }
+  .risk-val   { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink); width: 48px; text-align: right; flex-shrink: 0; }
+
+  /* Data table */
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: 0.88rem; }
+  th { background: #f4f4f0; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--rule); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--rule); color: var(--ink-light); font-size: 0.9rem; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--highlight); }
+  td.amt { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+  td.gender-f { color: var(--accent-warm); font-weight: 600; }
+  td.gender-m { color: var(--accent-blue); font-weight: 600; }
+
+  /* ── Callout / Insight Box ── */
+  .insight {
+    background: var(--highlight);
+    border: 1px solid #b2dfcc;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 32px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .insight-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+  .insight-body { font-size: 0.96rem; color: var(--ink); line-height: 1.7; }
+  .insight-body strong { color: var(--accent); }
+
+  .warning {
+    background: #fef6f5;
+    border: 1px solid #f5c6c2;
+  }
+  .warning .insight-body strong { color: var(--accent-warm); }
+
+  /* ── Divider ── */
+  .divider { text-align: center; margin: 48px 0; color: var(--muted); letter-spacing: 8px; font-size: 0.8rem; }
+
+  /* ── Methodology pills ── */
+  .method-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 24px; }
+  .method-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--rule);
+    color: var(--muted);
+    background: white;
+  }
+
+  /* ── Footer ── */
+  .article-footer {
+    margin-top: 72px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+  }
+  .article-footer p { font-size: 0.88rem; color: var(--muted); font-style: italic; margin-bottom: 8px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 560px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .donut-flex { flex-direction: column; }
+    .topbar-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <span class="topbar-logo">Medium</span>
+  <span class="topbar-meta">Data · Analytics · Finance</span>
+</div>
+
+<!-- Article -->
+<div class="article-wrap">
+
+  <!-- Tags -->
+  <div class="tag-row">
+    <span class="tag tag-green">Data Analytics</span>
+    <span class="tag tag-blue">Finance</span>
+    <span class="tag tag-red">Risk Management</span>
+    <span class="tag tag-gold">Power BI</span>
+  </div>
+
+  <!-- Title -->
+  <h1 class="hero">Who Borrows, Who Risks, and Where the Money Actually Goes: A Loan Portfolio Story</h1>
+
+  <p class="deck">A data-driven deep dive into 30,000+ customer loan records — revealing how gender, age, income, and geography shape credit exposure in ways most dashboards miss.</p>
+
+  <!-- Byline -->
+  <div class="byline">
+    <div class="avatar">A</div>
+    <div class="byline-text">
+      <div class="byline-name">Your Name · Data Analyst</div>
+      <div class="byline-meta">Published · March 2025 &nbsp;|&nbsp; Power BI · SQL · DAX</div>
+    </div>
+    <span class="read-time">8 min read</span>
+  </div>
+
+  <!-- Intro -->
+  <p class="lead">Every loan application tells a story. Behind every approved or rejected request is a human being navigating life — a young adult in City B trying to build something, a senior managing fixed income, a small business owner betting on the future. When you aggregate 30,000 of those stories into a dataset, patterns emerge that no individual case could reveal.</p>
+
+  <p>This dashboard was built not just to track numbers, but to ask harder questions: <em>Who is carrying the most debt?</em> <em>Where does default risk actually concentrate?</em> <em>Are low-income borrowers being systematically over-exposed?</em> Let me walk you through what the data showed — and what it quietly hides.</p>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 1: Overview -->
+  <h2>The Big Picture — What 1 Billion in Loans Looks Like</h2>
+
+  <p>Before diving into segments, it helps to appreciate the scale. Across <strong>30,037 customers</strong>, this portfolio carries a combined loan value of <strong>$1 billion</strong> — with an average interest rate of 8.12%. The headline numbers sound stable. But the concentration of risk lurking underneath is the real story.</p>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-value">$1bn</div>
+      <div class="kpi-label">Total Loan Portfolio</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value blue">8.12%</div>
+      <div class="kpi-label">Avg. Interest Rate</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value red">30K</div>
+      <div class="kpi-label">High-Risk Flags</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value gold">4</div>
+      <div class="kpi-label">City Categories</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value blue">28</div>
+      <div class="kpi-label">Data Sources</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">30.0K</div>
+      <div class="kpi-label">Unique Customer IDs</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <span class="insight-icon">💡</span>
+    <div class="insight-body"><strong>Analyst's note:</strong> A high-risk flag volume matching nearly 100% of total customer count suggests this field may capture general risk tier (not just delinquency). Deeper definitional audit of "High Risk" is recommended before acting on this KPI alone.</div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 2: Gender -->
+  <h2>The Gender Lending Gap — More Than Just a Number</h2>
+
+  <p>The gender split in this portfolio is striking. Men account for <strong>62.2%</strong> of total loan value ($668M), while women hold <strong>37.8%</strong> ($406M). But before interpreting this as a lending bias, we need to ask whether it reflects access barriers or structural differences in loan purpose and size.</p>
+
+  <!-- Gender Visual -->
+  <div class="stat-block">
+    <div class="stat-block-title">Total Loan by Gender</div>
+    <div class="donut-flex">
+      <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#e8e8e8" stroke-width="20"/>
+        <!-- Male: 62.2% = 222deg of 360 -->
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#1a4a7a" stroke-width="20"
+          stroke-dasharray="156 95" stroke-dashoffset="0"
+          transform="rotate(-90 55 55)"/>
+        <!-- Female: 37.8% -->
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#c0392b" stroke-width="20"
+          stroke-dasharray="95 156" stroke-dashoffset="-156"
+          transform="rotate(-90 55 55)"/>
+        <text x="55" y="59" text-anchor="middle" font-family="'Playfair Display',serif" font-size="12" fill="#1a1a1a">$1bn</text>
+      </svg>
+      <div style="flex:1">
+        <div class="legend-item"><span class="legend-swatch" style="background:#1a4a7a"></span><strong>Male</strong> &nbsp; $668M &nbsp; <span style="color:var(--muted)">62.2%</span></div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#c0392b"></span><strong>Female</strong> &nbsp; $406M &nbsp; <span style="color:var(--muted)">37.8%</span></div>
+        <div style="margin-top:14px">
+          <div class="split-bar">
+            <div class="split-male" style="width:62.2%"></div>
+            <div class="split-female" style="width:37.8%"></div>
+          </div>
+          <div class="split-labels">
+            <span><span class="split-dot" style="background:#1a4a7a"></span>Male 62.2%</span>
+            <span>Female 37.8%<span class="split-dot" style="background:#c0392b;margin-left:5px;margin-right:0"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <blockquote>
+    <p>"A 24-point lending gap between genders doesn't automatically mean discrimination. But it does demand an explanation — and that explanation must be found in the data, not assumed away."</p>
+  </blockquote>
+
+  <p>What the Top 6 Highest Existing EMI customers reveal is equally interesting. Of the six individuals carrying the largest active monthly obligations, <strong>four are women</strong> — suggesting female borrowers, though fewer in number, are not shy of significant debt loads when access is granted.</p>
+
+  <!-- EMI Table -->
+  <div class="stat-block">
+    <div class="stat-block-title">Top 6 Customers by Existing EMI</div>
+    <table>
+      <thead>
+        <tr><th>Customer ID</th><th>Existing EMI</th><th>Gender</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>APPI206297934​04</td><td class="amt">$43,000</td><td class="gender-f">Female</td></tr>
+        <tr><td>APPJ300809393​35</td><td class="amt">$20,000</td><td class="gender-m">Male</td></tr>
+        <tr><td>APPJ809690774​705</td><td class="amt">$25,000</td><td class="gender-f">Female</td></tr>
+        <tr><td>APPK400055220​18</td><td class="amt">$40,000</td><td class="gender-f">Female</td></tr>
+        <tr><td>APPX900696174​937</td><td class="amt">$39,600</td><td class="gender-f">Female</td></tr>
+        <tr><td style="font-weight:600">Total</td><td class="amt" style="font-weight:600">$194,900</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight warning">
+    <span class="insight-icon">⚠️</span>
+    <div class="insight-body"><strong>Watch closely:</strong> Four of the five largest individual EMI obligations belong to female customers. If this cohort is disproportionately placed in higher interest tiers, there's a compounding equity concern worth auditing.</div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 3: Risk -->
+  <h2>The Risk Paradox — Low-Income Borrowers Carry the Most Debt</h2>
+
+  <p>Perhaps the single most important finding in this entire dashboard sits in the <strong>Risk Dashboard</strong> panel. Loan amounts by income group show a distribution that should keep any credit risk officer up at night.</p>
+
+  <div class="stat-block">
+    <div class="stat-block-title">Loan Amount by Income Group</div>
+
+    <div class="risk-item">
+      <span class="risk-label">Low</span>
+      <div class="risk-track"><div style="width:100%;height:100%;background:#c0392b;border-radius:4px"></div></div>
+      <span class="risk-val">$1.06bn</span>
+    </div>
+    <div class="risk-item">
+      <span class="risk-label">Medium</span>
+      <div class="risk-track"><div style="width:1%;height:100%;background:#d4a017;border-radius:4px"></div></div>
+      <span class="risk-val">$0.01bn</span>
+    </div>
+    <div class="risk-item">
+      <span class="risk-label">High</span>
+      <div class="risk-track"><div style="width:0.5%;height:100%;background:#1a7a4a;border-radius:4px"></div></div>
+      <span class="risk-val">~$0.00bn</span>
+    </div>
+
+    <p style="margin-top:14px;margin-bottom:0;font-size:0.88rem;color:var(--muted);font-family:'JetBrains Mono',monospace">
+      Low-income group holds 99%+ of total loan value
+    </p>
+  </div>
+
+  <p>The low-income group holds <em>virtually all</em> of the portfolio's loan value ($1.06bn), while medium and high-income borrowers account for a negligible fraction. This is an extreme concentration that points to one of two realities: either this lender is a <strong>microfinance or underserved-market institution</strong>, or the income segmentation data has classification issues worth investigating.</p>
+
+  <p>Either way, from a risk management standpoint, this concentration in a single income band creates enormous systemic exposure. A localized economic shock — job losses, inflation spikes, policy changes — affecting low-income earners would essentially stress the entire portfolio simultaneously.</p>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 4: Age & Gender -->
+  <h2>Age Meets Gender — Young Adults Drive the Volume</h2>
+
+  <p>Breaking the portfolio down by <strong>age group and gender</strong> reveals a clear generational skew. Young Adults dominate loan volumes — male Young Adults alone contribute <strong>$1bn</strong> of the portfolio's total, dwarfing every other demographic segment.</p>
+
+  <div class="stat-block">
+    <div class="stat-block-title">Loan by Age Group × Gender</div>
+
+    <h3 style="margin-top:8px">Young Adults</h3>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>🔵 Male</span><span>$1.00bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:100%;background:#1a4a7a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>🔴 Female</span><span>$0.38bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:38%;background:#c0392b"></div></div>
+    </div>
+
+    <h3>Old Adults</h3>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>🔵 Male</span><span>$0.29bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:29%;background:#1a4a7a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>🔴 Female</span><span>$0.27bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:27%;background:#c0392b"></div></div>
+    </div>
+
+    <h3>Seniors</h3>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>🔵 Male</span><span>$0.13bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:13%;background:#1a4a7a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>🔴 Female</span><span>~$0.00bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:0.5%;background:#c0392b"></div></div>
+    </div>
+  </div>
+
+  <p>Senior women appear to have near-zero loan exposure in this dataset — a finding that could reflect genuine lower demand, limited credit access, or data completeness issues. Senior men carry $0.13bn. The Old Adults segment is the most gender-balanced, with male and female borrowers nearly equal in loan value ($0.29bn vs $0.27bn).</p>
+
+  <div class="insight">
+    <span class="insight-icon">📊</span>
+    <div class="insight-body"><strong>Key takeaway:</strong> The gender gap in lending is primarily a <em>Young Adult</em> phenomenon. Among Old Adults, the gap nearly disappears. Any intervention strategy should be age-segmented, not applied uniformly.</div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 5: Bank Type -->
+  <h2>Bank Type Breakdown — Private Banks Lead</h2>
+
+  <p>The portfolio splits across three bank types. Private banks (P) lead with <strong>$0.62bn</strong>, government banks (G) hold <strong>$0.33bn</strong>, and a small unclassified segment accounts for <strong>$0.12bn</strong>.</p>
+
+  <div class="stat-block">
+    <div class="stat-block-title">Loan by Primary Bank Type</div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>Private (P)</span><span>$0.62bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:62%;background:#1a7a4a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>Government (G)</span><span>$0.33bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:33%;background:#1a4a7a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>Unclassified</span><span>$0.12bn</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:12%;background:#d4a017"></div></div>
+    </div>
+  </div>
+
+  <p>The 12% unclassified segment is a data quality red flag. In risk modelling, unclassified lender records are essentially "known unknowns" — they exist in the portfolio but can't be properly stress-tested, regulated, or benchmarked. A data cleaning sprint to resolve these would immediately improve the portfolio's analytical integrity.</p>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 6: Geography -->
+  <h2>City Geography — City B Is Carrying the Weight</h2>
+
+  <p>Customer distribution across city categories reveals heavy geographic concentration. <strong>City B</strong> accounts for 72.3% of all customers (21.5K), while Cities A and C hold 10.6% and 17.1% respectively.</p>
+
+  <div class="stat-block">
+    <div class="stat-block-title">Customers by City Category</div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>City B</span><span>21.5K (72.3%)</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:72%;background:#1a4a7a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>City C</span><span>5.07K (17.1%)</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:17%;background:#1a7a4a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>City A</span><span>3.16K (10.6%)</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:11%;background:#d4a017"></div></div>
+    </div>
+  </div>
+
+  <p>Geographic concentration at this scale means that any regional shock — economic downturn, natural disaster, regulatory change — affecting City B would impact nearly three-quarters of the entire customer base. This is a portfolio diversification concern that goes beyond credit scoring.</p>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Section 7: Income -->
+  <h2>Monthly Income vs Loan Burden — A Troubling Mismatch</h2>
+
+  <p>Monthly income distribution across groups shows that low-income earners generate <strong>$101M</strong> in monthly income collectively — vastly more than medium ($9M) and high ($9M) groups. This confirms that the low-income classification likely represents the numerically largest cohort, not necessarily the most financially precarious individuals per capita.</p>
+
+  <div class="stat-block">
+    <div class="stat-block-title">Monthly Income by Income Group</div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>Low Income</span><span>$101M/mo</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:100%;background:#c0392b"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>High Income</span><span>$9M/mo</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:9%;background:#1a7a4a"></div></div>
+    </div>
+    <div class="h-bar-row">
+      <div class="h-bar-label"><span>Medium Income</span><span>$9M/mo</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:9%;background:#1a4a7a"></div></div>
+    </div>
+  </div>
+
+  <blockquote>
+    <p>"The danger isn't just that low-income borrowers hold the most debt. It's that a $1.06bn loan book resting on a $101M monthly income base implies a debt-to-income burden that warrants immediate portfolio stress testing."</p>
+  </blockquote>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Methodology -->
+  <h2>How This Was Built</h2>
+
+  <p>The dashboard was constructed end-to-end using Power BI, with data preparation handled through Power Query and business logic expressed in DAX measures. Here's the methodology stack:</p>
+
+  <div class="method-grid">
+    <span class="method-pill">Power BI Desktop</span>
+    <span class="method-pill">Power Query (ETL)</span>
+    <span class="method-pill">DAX Measures</span>
+    <span class="method-pill">Donut Chart</span>
+    <span class="method-pill">Grouped Bar Chart</span>
+    <span class="method-pill">KPI Cards</span>
+    <span class="method-pill">Area Chart</span>
+    <span class="method-pill">Table Visual</span>
+    <span class="method-pill">Dynamic Filters</span>
+    <span class="method-pill">Slicers</span>
+  </div>
+
+  <h3>Data Cleaning Steps Applied</h3>
+  <p>The raw dataset required several preparation steps before it was analytically sound: removal of null loan amount records; standardization of gender labels; normalization of income group classifications; resolution of duplicate Customer ID entries; and data type formatting for interest rate fields.</p>
+
+  <p>Three interactive filters were configured on the final dashboard — City Category, Primary Bank Type, and Interest Rate range — enabling executives to drill into any segment without navigating to a separate report page.</p>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Recommendations -->
+  <h2>What the Data Is Asking You to Do Next</h2>
+
+  <p>Good analytics doesn't end at the dashboard. Here are four concrete next steps this analysis demands:</p>
+
+  <p><strong>1. Conduct a debt-to-income audit on the low-income cohort.</strong> With $1.06bn in loans on a $101M/month income base, the repayment math needs to be stress-tested under 2%, 5%, and 10% income shock scenarios.</p>
+
+  <p><strong>2. Investigate the Young Adult female lending gap.</strong> The gender gap almost disappears in older age groups — which means the barrier is generational, not structural. Targeted outreach and product design for young adult women could expand the market meaningfully.</p>
+
+  <p><strong>3. Resolve the 12% unclassified bank type segment.</strong> These records are flying blind in the portfolio. A data cleanse sprint — even a partial one — would improve risk modelling accuracy immediately.</p>
+
+  <p><strong>4. Explore geographic expansion beyond City B.</strong> 72% customer concentration in one city is a single-point-of-failure risk. Cities A and C are underserved — which is either a risk mitigation opportunity or a market growth one, depending on your strategy.</p>
+
+  <div class="divider">· · ·</div>
+
+  <!-- Conclusion -->
+  <h2>Final Thought</h2>
+
+  <p class="lead">The best dashboards don't just answer questions. They force you to ask better ones.</p>
+
+  <p>This loan portfolio tells a story of concentration — in income, in geography, in age, and to a lesser extent, in gender. Each concentration is a data story waiting to be told, a risk waiting to be quantified, and a decision waiting to be made better.</p>
+
+  <p>If you're working on similar credit risk or HR analytics projects and want to collaborate or exchange methods, I'd love to connect. The data world is far more interesting when we build it together.</p>
+
+  <!-- Footer -->
+  <div class="article-footer">
+    <p>Dashboard designed and analysed using Power BI. Dataset: structured HR/payroll records, 30,000+ customer entries.</p>
+    <p>Follow for more data storytelling — covering analytics, financial intelligence, and the art of turning numbers into narratives.</p>
+    <div class="tag-row" style="margin-top:16px">
+      <span class="tag tag-green">Data Analytics</span>
+      <span class="tag tag-blue">Credit Risk</span>
+      <span class="tag tag-red">Gender in Finance</span>
+      <span class="tag tag-gold">Power BI</span>
+    </div>
+  </div>
+
+</div><!-- /article-wrap -->
+</body>
+</html>
